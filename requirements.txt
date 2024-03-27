@@ -1,2 +1,4 @@
 requests
 fastapi
+python-multipart
+mysql-connector-python

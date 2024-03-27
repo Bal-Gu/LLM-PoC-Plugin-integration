@@ -82,6 +82,12 @@ class Database:
         self.mycursor.execute(sql, values)
         self.mydb.commit()
 
+    def update_user(self,user):
+        # Generate a new token
+        new_token = ''.join(random.choices(string.ascii_letters + string.digits, k=255))
 
-db = Database(json.load(open("../config/config.json","rb")))
-db.login("admin","admin")
+        # Update the new token in the database
+        self.mycursor.execute("UPDATE user SET auth_token = %s WHERE id = %s", [new_token, user[0]])
+        self.mydb.commit()
+        return new_token
+

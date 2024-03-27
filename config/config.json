@@ -8,7 +8,7 @@
   "addition_models": [],
   "mysql_host": "localhost",
   "mysql_port": 3306,
-  "msql_user": "root",
+  "mysql_user": "root",
   "mysql_password": "root",
   "admin_password": "admin"
 }

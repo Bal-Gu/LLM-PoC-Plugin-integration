@@ -1,18 +1,18 @@
 import React, { useState } from "react";
-import "./login.css";
-import { useNavigate } from 'react-router-dom'
+import "./register.css";
 import { FaUserAlt } from "react-icons/fa";
 import { FaLock } from "react-icons/fa";
 
-function Login({ setAuthToken }: { setAuthToken: (token: string) => void }) {
-    const navigate = useNavigate();
+function Register({ setAuthToken }: { setAuthToken: (token: string) => void }) {
+  // rest of your code
+
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [api_key, setAPI] = useState("")
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const response = await fetch('http://localhost:8000/login', {
+        const response = await fetch('http://localhost:8000/register', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -23,17 +23,18 @@ function Login({ setAuthToken }: { setAuthToken: (token: string) => void }) {
         const data = await response.json();
 
         if (!data.api) {
-            setError("Wrong credentials");
+            setError(data.detail);
         } else {
             setAPI(data.api);
-            navigate('/chat');
+
+            // Handle successful login
         }
     }
 
     return (
     <div className="wrapper">
         <form onSubmit={handleSubmit}>
-            <h1>Login</h1>
+            <h1>Create your account</h1>
             <div className="input-box">
                 <FaUserAlt className="icon"/>
                 <input type="text" placeholder="Username" required maxLength={64} value={username} onChange={(e) => {setUsername(e.target.value); setError("");}}/>
@@ -42,14 +43,11 @@ function Login({ setAuthToken }: { setAuthToken: (token: string) => void }) {
                 <FaLock className="icon"/>
                 <input type="password" placeholder="Password" required value={password} onChange={(e) => {setPassword(e.target.value); setError("");}}/>
             </div>
-            <button type="submit">Login</button>
+            <button type="submit">Register</button>
             {error && <div className="error">{error}</div>}
-            <div className="register-link">
-                <p><a href="/register"> Click here to register</a></p>
-            </div>
         </form>
     </div>
     );
 }
 
-export default Login
+export default Register

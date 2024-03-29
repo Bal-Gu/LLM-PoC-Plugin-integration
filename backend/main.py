@@ -91,7 +91,7 @@ def get_user(authorization: str):
 
 
 @app.post("/login")
-async def send_new_token(request: Request, authorization: str = Header(None)):
+async def send_new_token(request: Request):
     data = await request.json()
 
     # Check if the 'message' field is in the JSON data
@@ -104,6 +104,20 @@ async def send_new_token(request: Request, authorization: str = Header(None)):
     password = data['password']
     return {"api": db.login(username, password)}
 
+@app.post("/register")
+async def register(request: Request):
+    data = await request.json()
+    # Check if the 'message' field is in the JSON data
+    if 'username' not in data:
+        raise HTTPException(status_code=400, detail="No username field in the request body")
+    elif 'password' not in data:
+        raise HTTPException(status_code=400, detail="No password field in the request body")
+    username = data['username']
+    password = data['password']
+    user = db.create_user(username,password)
+    if not user:
+        raise HTTPException(status_code=400, detail="Username is already taken")
+    return {"api": user}
 
 @app.post("/token/update")
 async def send_new_token(authorization: str = Header(None)):

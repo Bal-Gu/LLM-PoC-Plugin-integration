@@ -28,7 +28,7 @@ class Database:
 
         # Session table
         self.mycursor.execute(
-            "CREATE TABLE IF NOT EXISTS session (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, model_name VARCHAR(255), FOREIGN KEY(user_id) REFERENCES user(id))")
+            "CREATE TABLE IF NOT EXISTS session (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, model_name VARCHAR(255),session_name VARCHAR(255), FOREIGN KEY(user_id) REFERENCES user(id))")
 
         # Message table
         self.mycursor.execute(
@@ -38,25 +38,27 @@ class Database:
         self.mycursor.execute(
             "CREATE TABLE IF NOT EXISTS plugin (user_id INT, internal_id INT AUTO_INCREMENT PRIMARY KEY, session_id INT, activated BOOLEAN, FOREIGN KEY(user_id) REFERENCES user(id), FOREIGN KEY(session_id) REFERENCES session(id))")
 
-        self.create_user("assitent",str(random.random()),False,1)
+        self.create_user("assitent", str(random.random()), False, 1)
         self.create_user("admin", config["admin_password"], True, 2)
 
-    def login(self,username,password):
-        self.mycursor.execute("SELECT * FROM user WHERE username = %s",[username])
+    def login(self, username, password):
+        self.mycursor.execute("SELECT * FROM user WHERE username = %s", [username])
         user = self.mycursor.fetchone()
-        if user :
+        if user:
             salt = user[3]
             db_pass = user[2]
             hash_password = hashlib.sha3_256()
             hash_password.update(str(username + password + salt).encode())
             internal_pass = hash_password.hexdigest()
             if internal_pass == db_pass:
-                return user.get("auth_token")
+                return user[2]
         return None
-    def create_user(self,username,password,admin=False,user_id=-1):
+
+    def create_user(self, username, password, admin=False, user_id=-1):
         """returns True if unique"""
-        self.mycursor.execute("SELECT * FROM user WHERE id = %s",[user_id])
+        self.mycursor.execute("SELECT * FROM user WHERE id = %s OR username = %s", [user_id,username])
         user = self.mycursor.fetchone()
+        auth = ''.join(random.choices(string.ascii_letters + string.digits, k=255))
         if not user:
             salt = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
             hash_password = hashlib.sha3_256()
@@ -64,15 +66,15 @@ class Database:
             data = {
                 "username": username,
                 "password": hash_password.hexdigest(),
-                "auth_token": ''.join(random.choices(string.ascii_letters + string.digits, k=255)) ,
+                "auth_token": auth,
                 "admin": admin,
                 "salt": salt
             }
-            if id != -1:
+            if user_id != -1:
                 data["id"] = user_id
             self.save("user", data)
-            return True
-        return False
+            return auth
+        return  None
 
     def save(self, table: str, data: dict):
         placeholders = ', '.join(['%s'] * len(data))
@@ -82,7 +84,7 @@ class Database:
         self.mycursor.execute(sql, values)
         self.mydb.commit()
 
-    def update_user(self,user):
+    def update_user(self, user):
         # Generate a new token
         new_token = ''.join(random.choices(string.ascii_letters + string.digits, k=255))
 
@@ -90,4 +92,3 @@ class Database:
         self.mycursor.execute("UPDATE user SET auth_token = %s WHERE id = %s", [new_token, user[0]])
         self.mydb.commit()
         return new_token
-

@@ -7,12 +7,13 @@ import Chat from './chat/chat';
 import { AuthTokenContext } from './AuthTokenContext'; // Import the AuthTokenContext
 
 function App() {
-  const [authToken, setAuthToken] = useState<string | null>(null);
+ const [authToken, setAuthToken] = useState<string | null>(null);
+
 
   return (
     <Router>
       <div className="App">
-        <AuthTokenContext.Provider value={authToken}>
+        <AuthTokenContext.Provider value={[authToken, setAuthToken]}>
           <Routes>
             <Route path="/login" element={<Login setAuthToken={setAuthToken}/>}/>
             <Route path="/register" element={<Register setAuthToken={setAuthToken}/>}/>

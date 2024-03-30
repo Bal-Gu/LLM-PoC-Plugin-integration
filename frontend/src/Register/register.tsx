@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React, {useState} from "react";
 import "./register.css";
-import { FaUserAlt } from "react-icons/fa";
-import { FaLock } from "react-icons/fa";
+import {FaUserAlt} from "react-icons/fa";
+import {FaLock} from "react-icons/fa";
+import {AuthTokenContext} from "../AuthTokenContext";
+import {useNavigate} from "react-router-dom";
 
-function Register({ setAuthToken }: { setAuthToken: (token: string) => void }) {
-  // rest of your code
-
+function Register({setAuthToken}: { setAuthToken: (token: string) => void }) {
+    // rest of your code
+    const navigate = useNavigate();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -17,7 +19,7 @@ function Register({ setAuthToken }: { setAuthToken: (token: string) => void }) {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ username, password }),
+            body: JSON.stringify({username, password}),
         });
 
         const data = await response.json();
@@ -26,27 +28,36 @@ function Register({ setAuthToken }: { setAuthToken: (token: string) => void }) {
             setError(data.detail);
         } else {
             setAPI(data.api);
-
+            setAuthToken(data.api);
+            localStorage.setItem('authToken', data.api);
+            navigate('/chat');
             // Handle successful login
         }
     }
 
     return (
-    <div className="wrapper">
-        <form onSubmit={handleSubmit}>
-            <h1>Create your account</h1>
-            <div className="input-box">
-                <FaUserAlt className="icon"/>
-                <input type="text" placeholder="Username" required maxLength={64} value={username} onChange={(e) => {setUsername(e.target.value); setError("");}}/>
-            </div>
-            <div className="input-box">
-                <FaLock className="icon"/>
-                <input type="password" placeholder="Password" required value={password} onChange={(e) => {setPassword(e.target.value); setError("");}}/>
-            </div>
-            <button type="submit">Register</button>
-            {error && <div className="error">{error}</div>}
-        </form>
-    </div>
+        <div className="wrapper">
+            <form onSubmit={handleSubmit}>
+                <h1>Create your account</h1>
+                <div className="input-box">
+                    <FaUserAlt className="icon"/>
+                    <input type="text" placeholder="Username" required maxLength={64} value={username}
+                           onChange={(e) => {
+                               setUsername(e.target.value);
+                               setError("");
+                           }}/>
+                </div>
+                <div className="input-box">
+                    <FaLock className="icon"/>
+                    <input type="password" placeholder="Password" required value={password} onChange={(e) => {
+                        setPassword(e.target.value);
+                        setError("");
+                    }}/>
+                </div>
+                <button type="submit">Register</button>
+                {error && <div className="error">{error}</div>}
+            </form>
+        </div>
     );
 }
 

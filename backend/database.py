@@ -3,6 +3,7 @@ import json
 import random
 import string
 import time
+from typing import List
 
 import mysql.connector
 
@@ -38,12 +39,11 @@ class Database:
         self.mycursor.execute(
             "CREATE TABLE IF NOT EXISTS plugin (user_id INT, internal_id INT AUTO_INCREMENT PRIMARY KEY, session_id INT, activated BOOLEAN, FOREIGN KEY(user_id) REFERENCES user(id), FOREIGN KEY(session_id) REFERENCES session(id))")
 
-        self.create_user("assitent", str(random.random()), False, 1)
+        self.create_user("assistant", str(random.random()), False, 1)
         self.create_user("admin", config["admin_password"], True, 2)
 
     def login(self, username, password):
-        self.mycursor.execute("SELECT * FROM user WHERE username = %s", [username])
-        user = self.mycursor.fetchone()
+        user = self.parallelise_and_fetch(False,"SELECT * FROM user WHERE username = %s", [username])
         if user:
             salt = user[3]
             db_pass = user[2]
@@ -51,13 +51,12 @@ class Database:
             hash_password.update(str(username + password + salt).encode())
             internal_pass = hash_password.hexdigest()
             if internal_pass == db_pass:
-                return user[2]
+                return user[4]
         return None
 
     def create_user(self, username, password, admin=False, user_id=-1):
         """returns True if unique"""
-        self.mycursor.execute("SELECT * FROM user WHERE id = %s OR username = %s", [user_id,username])
-        user = self.mycursor.fetchone()
+        user = self.parallelise_and_fetch(False,"SELECT * FROM user WHERE id = %s OR username = %s", [user_id,username])
         auth = ''.join(random.choices(string.ascii_letters + string.digits, k=255))
         if not user:
             salt = ''.join(random.choices(string.ascii_letters + string.digits, k=5))
@@ -92,3 +91,15 @@ class Database:
         self.mycursor.execute("UPDATE user SET auth_token = %s WHERE id = %s", [new_token, user[0]])
         self.mydb.commit()
         return new_token
+
+    def parallelise_and_ignore(self,query:str,escape_values:List):
+        tmp_cursor = self.mydb.cursor()
+        self.mycursor.execute(query, escape_values)
+        self.mydb.commit()
+        tmp_cursor.close()
+    def parallelise_and_fetch(self, fetch_multiple:bool , query:str, escape_values:List):
+        tmp_cursor = self.mydb.cursor()
+        self.mycursor.execute(query,escape_values)
+        res =  tmp_cursor.fetchall() if fetch_multiple else tmp_cursor.fetchone()
+        tmp_cursor.close()
+        return res

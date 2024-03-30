@@ -6,6 +6,9 @@ to work with llm's.
 * Ollama
 * Mysql
 * Python 3.10
+* Nodejs
+* npm 9 or higher
+
 # TODO
 
 * Auto-load models that are required

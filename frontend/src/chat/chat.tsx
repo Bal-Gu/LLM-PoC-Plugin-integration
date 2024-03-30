@@ -21,7 +21,7 @@ function Chat() {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [currentSession,setNewSession] = useState<Session>();
-    const [isModalOpen, setIsModalOpen] = useState(false); // Add this line
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const closeModal = () => {
         setIsModalOpen(false); // Function to close the modal

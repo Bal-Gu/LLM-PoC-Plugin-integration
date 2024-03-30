@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import axios from 'axios';
+import "./NewChatWindow.css"
+import "../Login/login.css"
 
 interface NewChatWindowProps {
     models: string[];
@@ -7,7 +9,8 @@ interface NewChatWindowProps {
     isOpen: boolean;
     onClose: () => void;
 }
-const NewChatWindow: React.FC<NewChatWindowProps> = ({ models, onNewSession, isOpen, onClose }) => {
+
+const NewChatWindow: React.FC<NewChatWindowProps> = ({models, onNewSession, isOpen, onClose}) => {
     const [model, setModel] = useState(models[0]);
     const [sessionName, setSessionName] = useState('');
 
@@ -34,20 +37,28 @@ const NewChatWindow: React.FC<NewChatWindowProps> = ({ models, onNewSession, isO
     }
 
     return (
-        <div className="MainFrame">
+        <div className="NewChatModal">
             <form onSubmit={handleSubmit}>
-                <select value={model} onChange={e => setModel(e.target.value)}>
-                    {models.map(model => (
-                        <option key={model} value={model}>{model}</option>
-                    ))}
-                </select>
-                <input
-                    type="text"
-                    value={sessionName}
-                    onChange={e => setSessionName(e.target.value)}
-                    placeholder="Session name"
-                />
-                <button type="submit" className="NewChatButton">Create Session</button>
+                <div className="ModalAllignment">
+                    <h1>Model selection</h1>
+                    <select value={model} onChange={e => setModel(e.target.value)}>
+                        {models.map(model => (
+                            <option key={model} value={model}>{model}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="ModalAllignment">
+                    <h1>Session name</h1>
+                    <input
+                        type="text"
+                        value={sessionName}
+                        onChange={e => setSessionName(e.target.value)}
+                        placeholder="Give your  session a title"
+                    />
+                </div>
+                <div className="ModalAllignment">
+                    <button type="submit" className="button">Create Session</button>
+                </div>
             </form>
         </div>
     );

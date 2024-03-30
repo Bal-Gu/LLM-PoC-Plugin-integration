@@ -52,7 +52,8 @@
     width: 100%;
     height: 90%;
     color: black;
-    background-color: pink;
+    background-color: rgba(20,20,20,0.8);
+    box-shadow: rgba(119, 0, 200, 0.3) 0px 19px 38px, rgba(119, 0, 200, 0.22) 0px 15px 10px;
 }
 
 .SectionInSelection {

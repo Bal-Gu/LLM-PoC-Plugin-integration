@@ -1,9 +1,13 @@
 {
   "enforce_privacy": true,
   "enforce_ethics": true,
+  "enforce_integrity": true,
   "allow_websearch": true,
   "allow_plugins": true,
+  "allow_history": true,
   "allow_multiple_plugins": true,
+  "backend_url": "localhost:8000",
+  "frontend_url": "localhost:3000",
   "required_models": ["gemma:7b","llama2:7b","mistral:7b","vicuna:7b","openchat:7b"],
   "addition_models": [],
   "mysql_host": "localhost",

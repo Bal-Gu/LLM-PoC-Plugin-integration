@@ -26,6 +26,8 @@ function Login({ setAuthToken }: { setAuthToken: (token: string) => void }) {
             setError("Wrong credentials");
         } else {
             setAPI(data.api);
+            setAuthToken(data.api);
+            localStorage.setItem('authToken', data.api);
             navigate('/chat');
         }
     }

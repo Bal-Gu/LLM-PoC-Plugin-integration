@@ -99,7 +99,9 @@ class Database:
         tmp_cursor.close()
     def parallelise_and_fetch(self, fetch_multiple:bool , query:str, escape_values:List):
         tmp_cursor = self.mydb.cursor()
+        tmp_cursor.execute("USE Chat")
         self.mycursor.execute(query,escape_values)
         res =  tmp_cursor.fetchall() if fetch_multiple else tmp_cursor.fetchone()
+
         tmp_cursor.close()
         return res

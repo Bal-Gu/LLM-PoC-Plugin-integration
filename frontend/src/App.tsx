@@ -9,7 +9,6 @@ import { AuthTokenContext } from './AuthTokenContext'; // Import the AuthTokenCo
 function App() {
  const [authToken, setAuthToken] = useState<string | null>(null);
 
-
   return (
     <Router>
       <div className="App">

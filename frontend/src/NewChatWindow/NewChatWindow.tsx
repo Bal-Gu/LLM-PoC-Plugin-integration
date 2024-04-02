@@ -1,33 +1,45 @@
-import React, {useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import "./NewChatWindow.css"
 import "../Login/login.css"
+import config from '../config/config.json';
+import {Session} from "inspector";
 
 interface NewChatWindowProps {
     models: string[];
-    onNewSession: (data: any) => void;
+    onNewSession: (model_name: string,title: string) => void;
     isOpen: boolean;
     onClose: () => void;
 }
 
 const NewChatWindow: React.FC<NewChatWindowProps> = ({models, onNewSession, isOpen, onClose}) => {
-    const [model, setModel] = useState(models[0]);
+    const [model, setModel] = useState<string>(models[0]);
     const [sessionName, setSessionName] = useState('');
+    const authToken = localStorage.getItem('authToken') || "";
+
+    // Fetch model data when component mounts
+    useEffect(() => {
+        if (models.length > 0) {
+            setModel(models[0]);
+        }
+    }, [models]);
 
     const handleSubmit = async (event: { preventDefault: () => void; }) => {
         event.preventDefault();
-
-        const response = await axios.post('/newsession', {
+        if(model == null){
+            setModel(models[0]);
+        }
+        const response = await axios.post(`${config.backend_url}/newsession`, {
             model_name: model,
             session_name: sessionName
         }, {
             headers: {
-                'Authorization': 'Bearer your-authorization-key'
+                'Authorization': `Bearer ${authToken}`
             }
         });
 
         if (response.status === 200) {
-            onNewSession(response.data);
+            onNewSession(model,sessionName);
             onClose();
         }
     };

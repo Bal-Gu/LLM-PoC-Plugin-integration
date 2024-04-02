@@ -4,6 +4,7 @@ import "./chat.css";
 import {useNavigate} from 'react-router-dom';
 import NewChatWindow from "../NewChatWindow/NewChatWindow"
 import config from '../config/config.json';
+import {IoSend} from "react-icons/io5";
 
 interface Session {
     id: number;
@@ -20,8 +21,9 @@ function Chat() {
     const [selectedModel, setSelectedModel] = useState("gemma:7b");
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
-    const [currentSession,setNewSession] = useState<Session>();
+    const [currentSession, setNewSession] = useState<Session>();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedSession, setSelectedSession] = useState<Number>(-1);
 
     const closeModal = () => {
         setIsModalOpen(false); // Function to close the modal
@@ -32,19 +34,21 @@ function Chat() {
             navigate('/login');
         } else {
             // Fetch sessions and models when the component mounts
-           axios.get(`${config.backend_url}/session`, {headers: {Authorization: `Bearer ${authToken}`}})
-    .then(response => {
-        const filteredSessions = response.data.list.map((session: any) => ({
-            id: session[0],
-            model:session[2],
-            name: session[3],
-        }));
-        setSessions(filteredSessions);
-    })
-    .catch(error => console.error(error));
+            axios.get(`${config.backend_url}/session`, {headers: {Authorization: `Bearer ${authToken}`}})
+                .then(response => {
+                    const filteredSessions = response.data.list.map((session: any) => ({
+                        id: session[0],
+                        model: session[2],
+                        name: session[3],
+                    }));
+                    setSessions(filteredSessions);
+                })
+                .catch(error => console.error(error));
 
             axios.get(`${config.backend_url}/models`)
-                .then(response => {setModels(response.data.models)})
+                .then(response => {
+                    setModels(response.data.models)
+                })
                 .catch(error => console.error(error));
         }
     }, [authToken, navigate]);
@@ -53,8 +57,17 @@ function Chat() {
         setIsModalOpen(true); // Set isModalOpen to true when the button is clicked
     };
 
-    const handleNewSession = (newSession:Session) => {
+    const handleNewSession = (model_name: string, title: string) => {
         // Function to handle the new session
+        setMessages([]);
+        setSelectedModel(model_name);
+        let latest_session = sessions[sessions.length - 1].id + 1;
+        let new_session:Session =  {
+            id: latest_session,
+            name: title,
+            model: model_name,
+        }
+        setSessions(sessions.concat(new_session));
         // Add the new session to the session list and display the selected model next to the chat
     };
 
@@ -86,14 +99,16 @@ function Chat() {
                     <button className="NewChatButton" onClick={handleNewChat}>New Chat</button>
                 </div>
                 <div className="SectionInSelection">
-                    <button className="PluginButton" >Plugin</button>
+                    <button className="PluginButton">Plugin</button>
                 </div>
                 <div className="ScrolableSessionPannel">
                     {sessions.map(session => (
                         <div className="SessionSelection">
-                            <button className="SessionSelectionButton" onClick={() => handleSessionSelection(session)}></button>
+                            <button className="SessionSelectionButton"
+                                    onClick={() => handleSessionSelection(session)}>{session.name}</button>
 
                         </div>
+
                     ))}
 
                 </div>
@@ -111,11 +126,15 @@ function Chat() {
                             <option key={model} value={model}>{model}</option>
                         ))}
                     </select>
-                    <input value={newMessage} onChange={e => setNewMessage(e.target.value)}/>
-                    <button onClick={handleSendMessage}>Send</button>
+                    <div className="InputButtonWrapper">
+                        <input value={newMessage} onChange={e => setNewMessage(e.target.value)}/>
+                        <button onClick={handleSendMessage}>
+                            <IoSend style={{color: "8000ff"}}/>
+                        </button>
+                    </div>
                 </div>
             </div>
-            <NewChatWindow models={models} onNewSession={handleNewSession} isOpen={isModalOpen} onClose={closeModal} />
+            <NewChatWindow models={models} onNewSession={handleNewSession} isOpen={isModalOpen} onClose={closeModal}/>
         </div>
 
     );

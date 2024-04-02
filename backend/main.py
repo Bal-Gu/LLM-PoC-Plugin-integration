@@ -12,7 +12,9 @@ from backend.database import Database
 db = Database(json.load(open("../config/config.json", "rb")))
 app = FastAPI()
 origins = [
-    "http://localhost:3000",  # React app address
+    "http://localhost:3000",
+    "http://localhost:8000",
+    # React app address
     # add more origins if needed
 ]
 
@@ -30,7 +32,7 @@ def get_user(authorization: str):
     if not token or token == "null":
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="No authorization header provided")
     # Query the user from the database using the previous token
-    user = db.parallelise_and_fetch(False,"SELECT * FROM user WHERE auth_token = %s", [token])
+    user = db.parallelise_and_fetch(False, "SELECT * FROM user WHERE auth_token = %s", [token])
     return user
 
 
@@ -38,7 +40,7 @@ def get_user(authorization: str):
 async def list_all_session_of_user(authorization: str = Header(None)):
     user = get_user(authorization)
     user_id = user[0]
-    result = db.parallelise_and_fetch(True,"SELECT * FROM session WHERE user_id = %s", [user_id])
+    result = db.parallelise_and_fetch(True, "SELECT * FROM session WHERE user_id = %s", [user_id])
     if result is None:
         return {"list": []}
     return {"list": result}
@@ -55,15 +57,15 @@ async def list_all_available_models():
 @app.get("/history/{session_id}")
 async def get_all_messages_in_session(session_id, authorization: str = Header(None)):
     user = get_user(authorization)
-    session = db.parallelise_and_fetch(False,"SELECT * FROM session WHERE id = %s AND user_id = %s", [session_id, user[0]])
-
+    session = db.parallelise_and_fetch(False, "SELECT * FROM session WHERE id = %s AND user_id = %s",
+                                       [session_id, user[0]])
 
     if not session:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="User not associated with this session")
 
     # Query all messages from the message table where session_id matches the provided session id
     username = user.get("username")
-    messages = db.parallelise_and_fetch(True,"SELECT * FROM message WHERE session_id = %s", [session_id])
+    messages = db.parallelise_and_fetch(True, "SELECT * FROM message WHERE session_id = %s", [session_id])
     formated_messages = []
     for m in messages:
         formated_messages.append({
@@ -155,7 +157,8 @@ async def create_new_session(request: Request, authorization: str = Header(None)
     session_name = data['session_name']
     if len(str(session_name)) > 256:
         raise HTTPException(status_code=400, detail="No session name is too big")
-    db.parallelise_and_ignore("INSERT INTO session  (user_id, model_name, session_name) VALUES (%s,%s,%s)", [user[0], ])
+    db.parallelise_and_ignore("INSERT INTO session  (user_id, model_name, session_name) VALUES (%s,%s,%s)",
+                              [user[0], model_name, session_name])
 
 
 if __name__ == "__main__":

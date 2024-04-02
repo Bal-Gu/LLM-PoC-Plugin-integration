@@ -97,6 +97,22 @@
     box-shadow:0 0 10px #BA55FF;
 }
 
+.ModalAllignment button {
+
+
+    width: 100%;
+    height: 60%;
+    background: rgba(255, 255, 255, 0.1);
+
+    border-radius: 40px;
+    color: white;
+    font-size: large;
+    font-family: "Tauri", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    text-align: center;
+}
+
 .ModalAllignment {
     height: 33%;
     width: 100%;

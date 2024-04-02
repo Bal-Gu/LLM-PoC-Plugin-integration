@@ -5,6 +5,8 @@ import {useNavigate} from 'react-router-dom';
 import NewChatWindow from "../NewChatWindow/NewChatWindow"
 import config from '../config/config.json';
 import {IoSend} from "react-icons/io5";
+import {hourglass} from 'ldrs';
+
 
 interface Session {
     id: number;
@@ -13,13 +15,19 @@ interface Session {
     // include other properties here that a session might have
 }
 
+interface Message {
+    role: string;
+    content: string;
+    isDone: boolean;
+}
+
 function Chat() {
     const navigate = useNavigate();
     const authToken = localStorage.getItem('authToken');
     const [sessions, setSessions] = useState<Session[]>([]);
     const [models, setModels] = useState<string[]>([]);
     const [selectedModel, setSelectedModel] = useState("gemma:7b");
-    const [messages, setMessages] = useState([]);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [currentSession, setNewSession] = useState<Session>();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -62,7 +70,7 @@ function Chat() {
         setMessages([]);
         setSelectedModel(model_name);
         let latest_session = sessions[sessions.length - 1].id + 1;
-        let new_session:Session =  {
+        let new_session: Session = {
             id: latest_session,
             name: title,
             model: model_name,
@@ -72,6 +80,24 @@ function Chat() {
     };
 
     const handleSendMessage = () => {
+        if (newMessage === "") {
+            return;
+        }
+        let all_messages = messages;
+        let user_message: Message = {
+            role: "user",
+            content: newMessage,
+            isDone: true
+        };
+        let assitent_message: Message = {
+            role: "assistant",
+            content: "Message send",
+            isDone: false
+        };
+        all_messages = all_messages.concat(user_message);
+        all_messages = all_messages.concat(assitent_message);
+        setMessages(all_messages);
+        setNewMessage("");
         // Implement the functionality to send a message
     };
 
@@ -91,7 +117,7 @@ function Chat() {
             setMessages(response.data.messages);
         }
     };
-
+    hourglass.register();
     return (
         <div className="MainFrame">
             <div className="SelectionPanel">
@@ -116,8 +142,34 @@ function Chat() {
             </div>
             <div className="ChatContainer">
                 <div className="ChatFrame">
-                    {messages.map((message, index) => (
-                        <div key={index}>{message}</div>
+                    {messages.map((message) => (
+                        <div className="ChatLine">
+                            {message.role === "assistant" ? (
+                                <>
+                                    <div className="AssistantChatMessage">
+                                        <h3>Assitant</h3>
+                                        <p>{message.content}</p>
+                                    </div>
+                                    <div>
+                                        {message.isDone ? <></> : <l-hourglass
+                                            size="40"
+                                            bg-opacity="0.1"
+                                            speed="1.75"
+                                            color="purple"
+                                        ></l-hourglass>}
+                                    </div>
+                                    <div className="UserChatMessagePlaceHolder"></div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="AssistantChatMessagePlaceHolder"></div>
+                                    <div className="UserChatMessage">
+                                        <h3>User</h3>
+                                        <p>{message.content}</p>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     ))}
                 </div>
                 <div className="ChatInput">

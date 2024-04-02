@@ -69,7 +69,7 @@ async def get_all_messages_in_session(session_id, authorization: str = Header(No
     formated_messages = []
     for m in messages:
         formated_messages.append({
-            "role": "assitent" if int(m.get("user_id")) == 1 else "user",
+            "role": "assistant" if int(m.get("user_id")) == 1 else "user",
             "content": m.get("content")
         })
     return {"messages": messages}

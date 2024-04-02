@@ -179,7 +179,7 @@ function Chat() {
                         ))}
                     </select>
                     <div className="InputButtonWrapper">
-                        <input value={newMessage} onChange={e => setNewMessage(e.target.value)}/>
+                        <textarea value={newMessage} onChange={e => setNewMessage(e.target.value)}/>
                         <button onClick={handleSendMessage}>
                             <IoSend style={{color: "8000ff"}}/>
                         </button>

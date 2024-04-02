@@ -54,6 +54,9 @@
     color: black;
     background-color: rgba(20, 20, 20, 0.8);
     box-shadow: rgba(119, 0, 200, 0.3) 0px 19px 38px, rgba(119, 0, 200, 0.22) 0px 15px 10px;
+    overflow-y: scroll;
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
 }
 
 .SectionInSelection {
@@ -101,7 +104,7 @@
     height: 100%;
 }
 
-.ChatInput input {
+.ChatInput textarea {
     width: 100%;
     height: 100%;
     border-radius: 10px;
@@ -141,6 +144,7 @@
 
 .UserChatMessage {
     width: 50%;
+    white-space: pre-wrap;
     background-color: lightblue;
         box-shadow: rgba(240, 46, 170, 0.4) 5px 5px, rgba(240, 46, 170, 0.3) 10px 10px, rgba(240, 46, 170, 0.2) 15px 15px, rgba(240, 46, 170, 0.1) 20px 20px, rgba(240, 46, 170, 0.05) 25px 25px;
     color: black;
@@ -169,6 +173,7 @@
 
 .AssistantChatMessage {
     width: 50%;
+    white-space: pre-wrap;
     background-color: purple;
     box-shadow: rgba(240, 46, 170, 0.4) -5px 5px, rgba(240, 46, 170, 0.3) -10px 10px, rgba(240, 46, 170, 0.2) -15px 15px, rgba(240, 46, 170, 0.1) -20px 20px, rgba(240, 46, 170, 0.05) -25px 25px;
     color: white;

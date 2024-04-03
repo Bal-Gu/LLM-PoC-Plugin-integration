@@ -43,7 +43,7 @@ class Database:
         self.create_user("admin", config["admin_password"], True, 2)
 
     def login(self, username, password):
-        user = self.parallelise_and_fetch(False, "SELECT * FROM user WHERE username = %s", [username])
+        user = self.parallelize_and_fetch(False, "SELECT * FROM user WHERE username = %s", [username])
         if user:
             salt = user[3]
             db_pass = user[2]
@@ -56,7 +56,7 @@ class Database:
 
     def create_user(self, username, password, admin=False, user_id=-1):
         """returns True if unique"""
-        user = self.parallelise_and_fetch(False, "SELECT * FROM user WHERE id = %s OR username = %s",
+        user = self.parallelize_and_fetch(False, "SELECT * FROM user WHERE id = %s OR username = %s",
                                           [user_id, username])
         auth = ''.join(random.choices(string.ascii_letters + string.digits, k=255))
         if not user:
@@ -93,13 +93,13 @@ class Database:
         self.mydb.commit()
         return new_token
 
-    def parallelise_and_ignore(self, query: str, escape_values: List):
+    def parallelize_and_ignore(self, query: str, escape_values: List):
         tmp_cursor = self.mydb.cursor()
         self.mycursor.execute(query, escape_values)
         self.mydb.commit()
         tmp_cursor.close()
 
-    def parallelise_and_fetch(self, fetch_multiple: bool, query: str, escape_values: List):
+    def parallelize_and_fetch(self, fetch_multiple: bool, query: str, escape_values: List):
         tmp_cursor = self.mydb.cursor()
         tmp_cursor.execute("USE Chat")
         self.mycursor.execute(query, escape_values)

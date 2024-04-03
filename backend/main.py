@@ -8,9 +8,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.status import HTTP_401_UNAUTHORIZED
 
 from backend.database import Database
+from backend.models import Model
+from backend.plugin import PluginController
 
 db = Database(json.load(open("../config/config.json", "rb")))
 app = FastAPI()
+plugin_controller = PluginController()
+model = Model(plugin_controller)
 origins = [
     "http://localhost:3000",
     "http://localhost:8000",
@@ -75,28 +79,41 @@ async def get_all_messages_in_session(session_id, authorization: str = Header(No
     return {"messages": messages}
 
 
-def submit():
-    pass
+async def submit(messages):
+    # query the model
+
+    db.parallelise_and_ignore()
 
 
 @app.post("/message")
 async def send_message(request: Request, authorization: str = Header(None)):
-    old_messages = await get_all_messages_in_session(authorization)
     # Get the request body as JSON
     data = await request.json()
-
-    # Check if the 'message' field is in the JSON data
     if 'message' not in data:
         raise HTTPException(status_code=400, detail="No message field in the request body")
+    elif "session" not in data:
+        raise HTTPException(status_code=400, detail="No session field in the request body")
 
     # Get the message from the JSON data
-    message = data['message']
+    message = data["message"]
+    session = data["session"]
+    old_messages = await get_all_messages_in_session(session_id=session,authorization=authorization)
+
     old_messages["messages"].append({
         "role": "user",
         "content": message
     })
-
-    submit()
+    user = get_user(authorization)
+    # add the last message with the status "Done" to the message table
+    db.parallelise_and_ignore(
+        "INSERT INTO message (user_id,session_id,order_id,content,status) VALUES ( %s,%s,%s,%s,%s)",
+        [user[0], session, len(old_messages), message, 1])
+    # add a premtive message last message with the status "Processing" to the message table
+    db.parallelise_and_fetch("")
+    # get the message_id of the assistant added message
+    # TODO fire and forget
+    submit(old_messages, session)
+    # return the message_id
 
 
 @app.post("/login")

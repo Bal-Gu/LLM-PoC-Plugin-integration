@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import axios from 'axios';
 import "./NewChatWindow.css"
 import "../Login/login.css"
@@ -7,7 +7,7 @@ import {Session} from "inspector";
 
 interface NewChatWindowProps {
     models: string[];
-    onNewSession: (model_name: string,title: string) => void;
+    onNewSession: (model_name: string, title: string, index: number) => void;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -26,7 +26,7 @@ const NewChatWindow: React.FC<NewChatWindowProps> = ({models, onNewSession, isOp
 
     const handleSubmit = async (event: { preventDefault: () => void; }) => {
         event.preventDefault();
-        if(model == null){
+        if (model == null) {
             setModel(models[0]);
         }
         const response = await axios.post(`${config.backend_url}/newsession`, {
@@ -39,7 +39,7 @@ const NewChatWindow: React.FC<NewChatWindowProps> = ({models, onNewSession, isOp
         });
 
         if (response.status === 200) {
-            onNewSession(model,sessionName);
+            onNewSession(model, sessionName, response.data["session_id"]);
             onClose();
         }
     };

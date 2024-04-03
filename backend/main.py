@@ -1,10 +1,10 @@
 import json
-import operator
+import threading
 
 import uvicorn as uvicorn
-from fastapi import Request
 from fastapi import FastAPI
-from fastapi import HTTPException, Header, Depends
+from fastapi import HTTPException, Header
+from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.status import HTTP_401_UNAUTHORIZED
 
@@ -97,15 +97,13 @@ async def get_all_messages_in_session(session_id, authorization: str = Header(No
         formated_messages.append({
             "role": "assistant" if int(m[0]) == 1 else username,
             "content": m[4],
-            "done": m[5]
+            "isDone": m[5]
         })
     return {"messages": messages}
 
 
-async def submit(messages):
-    # query the model
-
-    db.parallelize_and_ignore()
+def submit(messages, user_message_id, assistant_message_id):
+    pass
 
 
 @app.post("/message")
@@ -127,15 +125,17 @@ async def send_message(request: Request, authorization: str = Header(None)):
         "content": message
     })
     user = get_user(authorization)
-    # add the last message with the status "Done" to the message table
-    db.parallelize_and_ignore(
+    # add the last message with the status not done (privacy check) to the message table
+    user_index = db.parallelize_and_index(
         "INSERT INTO message (user_id,session_id,order_id,content,status) VALUES ( %s,%s,%s,%s,%s)",
-        [user[0], session, len(old_messages), message, 1])
-    # add a premtive message last message with the status "Processing" to the message table
-    db.parallelize_and_fetch("")
+        [user[0], session, len(old_messages), "Processing Privacy", 0])
+    # add a preemptive message last message with the status "Processing" to the message table
+    assistant_index = db.parallelize_and_index(
+        "INSERT INTO message (user_id,session_id,order_id,content,status) VALUES ( %s,%s,%s,%s,%s)",
+        [1, session, len(old_messages) + 1, "Processing", 0])
     # get the message_id of the assistant added message
-    # TODO fire and forget
-    submit(old_messages, session)
+    # fire and forget
+    threading.Thread(target=submit, args=(old_messages, user_index, assistant_index)).start()
     # return the message_id
 
 
@@ -182,8 +182,20 @@ async def send_new_token(authorization: str = Header(None)):
 @app.patch("/updateModel/{session}")
 async def update_model_for_user(request: Request, session: int, authorization: str = Header(None)):
     user = get_user(authorization)
-    # TODO add the update on the DB
+    data = await request.json()
+    if 'model_name' not in data:
+        raise HTTPException(status_code=400, detail="No model_name field in the request body")
 
+    # Fetch the session from the database
+    session_data = db.parallelize_and_fetch(False, "SELECT * FROM session WHERE id = %s", [session])
+
+    # Check if the session exists and the user_id of the session matches the user_id of the authenticated user
+    if not session_data or session_data[1] != user[0]:
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="User not associated with this session")
+
+    # Update the model_name in the session table for the session
+    model_name = data['model_name']
+    db.parallelize_and_ignore("UPDATE session SET model_name = %s WHERE id = %s", [model_name, session])
 
 @app.post("/newsession")
 async def create_new_session(request: Request, authorization: str = Header(None)):

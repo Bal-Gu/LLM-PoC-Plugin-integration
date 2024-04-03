@@ -29,7 +29,7 @@ function Chat() {
     const [selectedModel, setSelectedModel] = useState("gemma:7b");
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
-    const [currentSession, setNewSession] = useState<Session>();
+    const [currentSession, setCurrentSession] = useState<Session>();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedSession, setSelectedSession] = useState<Number>(-1);
 
@@ -75,6 +75,7 @@ function Chat() {
             model: model_name,
         }
         setSessions(sessions.concat(new_session));
+        setCurrentSession(new_session)
         // Add the new session to the session list and display the selected model next to the chat
     };
 
@@ -117,7 +118,7 @@ function Chat() {
     const handleSessionSelection = async (session: Session) => {
         // Set the selected model to the model linked to the session
         setSelectedModel(session.model);
-
+        setCurrentSession(session);
         // Fetch the messages for the selected session
         const response = await axios.get(`${config.backend_url}/history/${session.id}`, {
             headers: {
@@ -139,6 +140,28 @@ function Chat() {
         }
     };
     hourglass.register();
+
+    const handleModelChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newModel = e.target.value;
+    setSelectedModel(newModel);
+    if(currentSession !== undefined){
+            currentSession.model = newModel;
+    }
+    if (currentSession) {
+        try {
+            await axios.patch(`${config.backend_url}/updateModel/${currentSession.id}`, {
+                model_name: newModel
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    }
+};
+
     return (
         <div className="MainFrame">
             <div className="SelectionPanel">
@@ -201,8 +224,9 @@ function Chat() {
                         </div>
                     ))}
                 </div>
+                { currentSession !== undefined ?
                 <div className="ChatInput">
-                    <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)}>
+                    <select value={selectedModel} onChange={handleModelChange}>
                         {models.map(model => (
                             <option key={model} value={model}>{model}</option>
                         ))}
@@ -213,7 +237,8 @@ function Chat() {
                             <IoSend style={{color: "8000ff"}}/>
                         </button>
                     </div>
-                </div>
+                </div>: <></>
+                }
             </div>
             <NewChatWindow models={models} onNewSession={handleNewSession} isOpen={isModalOpen} onClose={closeModal}/>
         </div>

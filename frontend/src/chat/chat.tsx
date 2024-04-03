@@ -114,6 +114,9 @@ function Chat() {
 
         if (response.status === 200) {
             // Set the messages state to the fetched messages
+            response.data.messages.map({
+
+            });
             setMessages(response.data.messages);
         }
     };
@@ -163,6 +166,14 @@ function Chat() {
                             ) : (
                                 <>
                                     <div className="AssistantChatMessagePlaceHolder"></div>
+                                    <div>
+                                        {message.isDone ? <></> : <l-hourglass
+                                            size="40"
+                                            bg-opacity="0.1"
+                                            speed="1.75"
+                                            color="purple"
+                                        ></l-hourglass>}
+                                    </div>
                                     <div className="UserChatMessage">
                                         <h3>User</h3>
                                         <p>{message.content}</p>

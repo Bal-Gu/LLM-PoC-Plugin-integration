@@ -1,4 +1,5 @@
 import json
+import operator
 
 import uvicorn as uvicorn
 from fastapi import Request
@@ -71,7 +72,7 @@ async def get_all_messages_in_session(session_id, authorization: str = Header(No
     username = user.get("username")
     messages = db.parallelize_and_fetch(True, "SELECT * FROM message WHERE session_id = %s", [session_id])
     formated_messages = []
-    for m in messages:
+    for m in messages.sort(key=lambda test_list: test_list[3]):
         formated_messages.append({
             "role": "assistant" if int(m.get("user_id")) == 1 else "user",
             "content": m.get("content")
@@ -97,7 +98,7 @@ async def send_message(request: Request, authorization: str = Header(None)):
     # Get the message from the JSON data
     message = data["message"]
     session = data["session"]
-    old_messages = await get_all_messages_in_session(session_id=session,authorization=authorization)
+    old_messages = await get_all_messages_in_session(session_id=session, authorization=authorization)
 
     old_messages["messages"].append({
         "role": "user",

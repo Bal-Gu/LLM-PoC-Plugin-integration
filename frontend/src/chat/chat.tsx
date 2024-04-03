@@ -65,13 +65,12 @@ function Chat() {
         setIsModalOpen(true); // Set isModalOpen to true when the button is clicked
     };
 
-    const handleNewSession = (model_name: string, title: string) => {
+    const handleNewSession = (model_name: string, title: string, session_id:number) => {
         // Function to handle the new session
         setMessages([]);
         setSelectedModel(model_name);
-        let latest_session = sessions[sessions.length - 1].id + 1;
         let new_session: Session = {
-            id: latest_session,
+            id: session_id,
             name: title,
             model: model_name,
         }
@@ -98,7 +97,21 @@ function Chat() {
         all_messages = all_messages.concat(assitent_message);
         setMessages(all_messages);
         setNewMessage("");
-        // Implement the functionality to send a message
+        // Send a POST request to the /message endpoint
+        axios.post(`${config.backend_url}/message`, {
+            message: newMessage,
+            session: currentSession?.id
+        }, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        }).then(response => {
+            // Handle the response here
+        }).catch(error => {
+            // Handle the error here
+        });
+
+
     };
 
     const handleSessionSelection = async (session: Session) => {
@@ -114,10 +127,15 @@ function Chat() {
 
         if (response.status === 200) {
             // Set the messages state to the fetched messages
-            response.data.messages.map({
-
-            });
-            setMessages(response.data.messages);
+            const mappedMessages = response.data.messages.map(
+                (message: any) => {
+                    return {
+                        role: message["role"],
+                        content: message["content"],
+                        isDone: message["done"]
+                    } as Message;
+                });
+            setMessages(mappedMessages);
         }
     };
     hourglass.register();

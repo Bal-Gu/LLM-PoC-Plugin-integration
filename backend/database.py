@@ -95,14 +95,27 @@ class Database:
 
     def parallelize_and_ignore(self, query: str, escape_values: List):
         tmp_cursor = self.mydb.cursor()
-        self.mycursor.execute(query, escape_values)
+        tmp_cursor.execute("USE Chat")
+        tmp_cursor.execute(query, escape_values)
         self.mydb.commit()
         tmp_cursor.close()
+
+
+
+    def parallelize_and_index(self, query: str, escape_values: List):
+        tmp_cursor = self.mydb.cursor()
+        tmp_cursor.execute("USE Chat")
+        tmp_cursor.execute(query, escape_values)
+        self.mydb.commit()
+        idx = tmp_cursor.lastrowid
+        tmp_cursor.close()
+        return idx
+
 
     def parallelize_and_fetch(self, fetch_multiple: bool, query: str, escape_values: List):
         tmp_cursor = self.mydb.cursor()
         tmp_cursor.execute("USE Chat")
-        self.mycursor.execute(query, escape_values)
+        tmp_cursor.execute(query, escape_values)
         res = tmp_cursor.fetchall() if fetch_multiple else tmp_cursor.fetchone()
 
         tmp_cursor.close()

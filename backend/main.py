@@ -59,6 +59,26 @@ async def list_all_available_models():
         return {"models": combined}
 
 
+@app.get("/singleMessage")
+async def get_single_message(request: Request, authorization: str = Header(None)):
+    user = get_user(authorization)
+
+    data = await request.json()
+    if 'message_id' not in data:
+        raise HTTPException(status_code=400, detail="No message_id field in the request body")
+    msg_id = data["message_id"]
+    msg = db.parallelize_and_fetch(False, "SELECT * FROM message WHERE id= %s", [msg_id])
+    if msg is None:
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid id")
+    if not msg[1] == user[0]:
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="User isn't allowed to watch this message")
+    return {
+        "role": user[0],
+        "content": msg[4],
+        "isDone": msg[5] == 1
+    }
+
+
 @app.get("/history/{session_id}")
 async def get_all_messages_in_session(session_id, authorization: str = Header(None)):
     user = get_user(authorization)
@@ -69,13 +89,15 @@ async def get_all_messages_in_session(session_id, authorization: str = Header(No
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="User not associated with this session")
 
     # Query all messages from the message table where session_id matches the provided session id
-    username = user.get("username")
+    username = user[1]
     messages = db.parallelize_and_fetch(True, "SELECT * FROM message WHERE session_id = %s", [session_id])
     formated_messages = []
-    for m in messages.sort(key=lambda test_list: test_list[3]):
+    messages.sort(key=lambda test_list: test_list[3])
+    for m in messages:
         formated_messages.append({
-            "role": "assistant" if int(m.get("user_id")) == 1 else "user",
-            "content": m.get("content")
+            "role": "assistant" if int(m[0]) == 1 else username,
+            "content": m[4],
+            "done": m[5]
         })
     return {"messages": messages}
 
@@ -174,9 +196,10 @@ async def create_new_session(request: Request, authorization: str = Header(None)
     model_name = data['model_name']
     session_name = data['session_name']
     if len(str(session_name)) > 256:
-        raise HTTPException(status_code=400, detail="No session name is too big")
-    db.parallelize_and_ignore("INSERT INTO session  (user_id, model_name, session_name) VALUES (%s,%s,%s)",
-                              [user[0], model_name, session_name])
+        raise HTTPException(status_code=400, detail="Session name is too big")
+    session_id = db.parallelize_and_index("INSERT INTO session  (user_id, model_name, session_name) VALUES (%s,%s,%s)",
+                                          [user[0], model_name, session_name])
+    return {"session_id": session_id}
 
 
 if __name__ == "__main__":

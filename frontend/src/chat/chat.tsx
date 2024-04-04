@@ -65,7 +65,7 @@ function Chat() {
         setIsModalOpen(true); // Set isModalOpen to true when the button is clicked
     };
 
-    const handleNewSession = (model_name: string, title: string, session_id:number) => {
+    const handleNewSession = (model_name: string, title: string, session_id: number) => {
         // Function to handle the new session
         setMessages([]);
         setSelectedModel(model_name);
@@ -106,10 +106,40 @@ function Chat() {
             headers: {
                 'Authorization': `Bearer ${authToken}`
             }
-        }).then(response => {
-            // Handle the response here
+        }).then(async response => {
+            let finish_user: boolean = false;
+            let finish_assistant: boolean = false;
+            let user_index: number = response.data.user_index;
+            let assistant_index: number = response.data.assistant_index;
+            while (!finish_user || !finish_assistant) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                await axios.get(`${config.backend_url}/singleMessage`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    data: {
+                        message_id: !finish_user ? user_index : assistant_index
+                    }
+                }).then(response => {
+                    if (!finish_user) {
+                        user_message.content = response.data.content;
+                    } else {
+                        assitent_message.content = response.data.content;
+                    }
+                    if (response.data.isDone) {
+                        if (!finish_user) {
+                            user_message.isDone = true;
+                            finish_user = true;
+                        } else {
+                            assitent_message.isDone = true;
+                            finish_assistant = true;
+                        }
+                    }
+                }).catch(error => {
+                    console.error(error);
+                });
+            }
         }).catch(error => {
-            // Handle the error here
         });
 
 
@@ -142,25 +172,25 @@ function Chat() {
     hourglass.register();
 
     const handleModelChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newModel = e.target.value;
-    setSelectedModel(newModel);
-    if(currentSession !== undefined){
+        const newModel = e.target.value;
+        setSelectedModel(newModel);
+        if (currentSession !== undefined) {
             currentSession.model = newModel;
-    }
-    if (currentSession) {
-        try {
-            await axios.patch(`${config.backend_url}/updateModel/${currentSession.id}`, {
-                model_name: newModel
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${authToken}`
-                }
-            });
-        } catch (error) {
-            console.error(error);
         }
-    }
-};
+        if (currentSession) {
+            try {
+                await axios.patch(`${config.backend_url}/updateModel/${currentSession.id}`, {
+                    model_name: newModel
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    };
 
     return (
         <div className="MainFrame">
@@ -224,20 +254,20 @@ function Chat() {
                         </div>
                     ))}
                 </div>
-                { currentSession !== undefined ?
-                <div className="ChatInput">
-                    <select value={selectedModel} onChange={handleModelChange}>
-                        {models.map(model => (
-                            <option key={model} value={model}>{model}</option>
-                        ))}
-                    </select>
-                    <div className="InputButtonWrapper">
-                        <textarea value={newMessage} onChange={e => setNewMessage(e.target.value)}/>
-                        <button onClick={handleSendMessage}>
-                            <IoSend style={{color: "8000ff"}}/>
-                        </button>
-                    </div>
-                </div>: <></>
+                {currentSession !== undefined ?
+                    <div className="ChatInput">
+                        <select value={selectedModel} onChange={handleModelChange}>
+                            {models.map(model => (
+                                <option key={model} value={model}>{model}</option>
+                            ))}
+                        </select>
+                        <div className="InputButtonWrapper">
+                            <textarea value={newMessage} onChange={e => setNewMessage(e.target.value)}/>
+                            <button onClick={handleSendMessage}>
+                                <IoSend style={{color: "8000ff"}}/>
+                            </button>
+                        </div>
+                    </div> : <></>
                 }
             </div>
             <NewChatWindow models={models} onNewSession={handleNewSession} isOpen={isModalOpen} onClose={closeModal}/>

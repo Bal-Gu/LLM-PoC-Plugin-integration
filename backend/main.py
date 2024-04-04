@@ -15,7 +15,7 @@ from backend.plugin import PluginController
 db = Database(json.load(open("../config/config.json", "rb")))
 app = FastAPI()
 plugin_controller = PluginController()
-model = Model(plugin_controller)
+model = Model(plugin_controller,db)
 origins = [
     "http://localhost:3000",
     "http://localhost:8000",
@@ -102,7 +102,11 @@ async def get_all_messages_in_session(session_id, authorization: str = Header(No
     return {"messages": messages}
 
 
-def submit(messages, user_message_id, assistant_message_id):
+def submit(messages, session, user_message_id, assistant_message_id):
+    model_name = db.parallelize_and_fetch(False, "SELECT model_name FROM session WHERE id = %s",
+                                          [session])
+    # TODO add chain logic
+    model.process_message(messages, model_name[0], user_message_id, assistant_message_id, [-1])
     pass
 
 
@@ -135,8 +139,12 @@ async def send_message(request: Request, authorization: str = Header(None)):
         [1, session, len(old_messages) + 1, "Processing", 0])
     # get the message_id of the assistant added message
     # fire and forget
-    threading.Thread(target=submit, args=(old_messages, user_index, assistant_index)).start()
+    threading.Thread(target=submit, args=(old_messages, session, user_index, assistant_index)).start()
     # return the message_id
+    return {
+        "assistant_index": assistant_index,
+        "user_index": user_index
+    }
 
 
 @app.post("/login")
@@ -196,6 +204,7 @@ async def update_model_for_user(request: Request, session: int, authorization: s
     # Update the model_name in the session table for the session
     model_name = data['model_name']
     db.parallelize_and_ignore("UPDATE session SET model_name = %s WHERE id = %s", [model_name, session])
+
 
 @app.post("/newsession")
 async def create_new_session(request: Request, authorization: str = Header(None)):

@@ -40,6 +40,11 @@ def get_user(authorization: str):
     user = db.parallelize_and_fetch(False, "SELECT * FROM user WHERE auth_token = %s", [token])
     return user
 
+def get_assistant():
+    # Query the user from the database using the previous token
+    user = db.parallelize_and_fetch(False, "SELECT * FROM user WHERE id = 1")
+    return user
+
 
 @app.get("/session")
 async def list_all_session_of_user(authorization: str = Header(None)):

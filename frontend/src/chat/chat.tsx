@@ -32,6 +32,7 @@ function Chat() {
     const [currentSession, setCurrentSession] = useState<Session>();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedSession, setSelectedSession] = useState<Number>(-1);
+    const [refresh, setRefresh] = useState(false);
 
     const closeModal = () => {
         setIsModalOpen(false); // Function to close the modal
@@ -59,7 +60,7 @@ function Chat() {
                 })
                 .catch(error => console.error(error));
         }
-    }, [authToken, navigate]);
+    }, [authToken, navigate, refresh]);
 
     const handleNewChat = () => {
         setIsModalOpen(true); // Set isModalOpen to true when the button is clicked
@@ -113,8 +114,6 @@ function Chat() {
             let assistant_index: number = response.data.assistant_index;
             while (!finish_user || !finish_assistant) {
                 await new Promise(resolve => setTimeout(resolve, 1000));
-                console.log(user_index);
-                console.log(assistant_index);
                 await axios.get(`${config.backend_url}/singleMessage/${!finish_user ? user_index : assistant_index}`, {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
@@ -122,6 +121,7 @@ function Chat() {
                 }).then(response => {
                     if (!finish_user) {
                         user_message.content = response.data.content;
+                        setRefresh(!refresh);
                     } else {
                         assitent_message.content = response.data.content;
                     }

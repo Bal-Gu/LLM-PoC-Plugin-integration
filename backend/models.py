@@ -6,6 +6,7 @@ from typing import List, Dict
 import requests
 
 from backend.database import Database
+from backend.jaccard import is_text_similar
 from backend.plugin import PluginController
 
 
@@ -71,7 +72,7 @@ class Model:
         size = len(self.config["required_models"])
         counter = 1
         for model in ["gemma:7b", "llama2:7b", "mistral:7b", "vicuna:7b", "openchat:7b"]:
-            self.db.parallelize_and_ignore("UPDATE message SET content = %s, status = 1 WHERE id = %s",
+            self.db.parallelize_and_ignore("UPDATE message SET content = %s WHERE id = %s",
                                            ["Ethics calculations for {} {}/{}".format(model, counter, size),
                                             message_id])
             response = requests.post("http://localhost:11434/api/chat", json={
@@ -87,7 +88,10 @@ class Model:
             if re.search(r"¦(.|\n)*\S+(.|\n)*¦", response.json()["message"]["content"]):
                 new_message = str(response.json()["message"]["content"]).split("¦")[1]
                 if not re.search("I cannot fulfill your request", new_message):
-                    private_message = "¦\n" + new_message + "¦\n"
+                    tmp_private_message = "¦\n" + new_message + "¦\n"
+                    if is_text_similar(tmp_private_message,private_message):
+                        # dismisses hallucination cases
+                        private_message = tmp_private_message
 
         return self.redact_sensitive_info(private_message)
         # TODO request the message and remove all of the privacy concerns
@@ -115,7 +119,7 @@ class Model:
 
     def process_message(self, messages: Dict, model: str, user_message_id: int, assistant_message_id: int,
                         chain: List[int]):
-        message_to_process = messages[-1]["content"]
+        message_to_process = messages["messages"][-1]["content"]
         new_message = self.privacy(message_to_process,user_message_id)
         # update the message to the filtered one and close the loading
         self.db.parallelize_and_ignore("UPDATE message SET content = %s, status = 1 WHERE id = %s",
@@ -133,8 +137,9 @@ class Model:
             else:
                 ff = self.plugin_filtering(ff)
                 ff = self.plugin_controller.execute_plugin(ff)
-
         self.integrity(messages)
+        self.db.parallelize_and_ignore("UPDATE message SET content = %s, status = 1 WHERE id = %s",
+                                       [ff, assistant_message_id])
         pass
 
     def install(self, models):

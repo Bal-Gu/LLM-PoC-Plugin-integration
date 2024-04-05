@@ -15,7 +15,7 @@ from backend.plugin import PluginController
 db = Database(json.load(open("../config/config.json", "rb")))
 app = FastAPI()
 plugin_controller = PluginController()
-model = Model(plugin_controller,db)
+model = Model(plugin_controller, db)
 origins = [
     "http://localhost:3000",
     "http://localhost:8000",
@@ -59,21 +59,16 @@ async def list_all_available_models():
         return {"models": combined}
 
 
-@app.get("/singleMessage")
-async def get_single_message(request: Request, authorization: str = Header(None)):
+@app.get("/singleMessage/{message_id}")
+async def get_single_message(message_id: int, authorization: str = Header(None)):
     user = get_user(authorization)
-
-    data = await request.json()
-    if 'message_id' not in data:
-        raise HTTPException(status_code=400, detail="No message_id field in the request body")
-    msg_id = data["message_id"]
-    msg = db.parallelize_and_fetch(False, "SELECT * FROM message WHERE id= %s", [msg_id])
+    msg = db.parallelize_and_fetch(False, "SELECT * FROM message WHERE id= %s", [message_id])
     if msg is None:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid id")
     if not msg[1] == user[0]:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="User isn't allowed to watch this message")
     return {
-        "role": user[0],
+        "role": user[1],
         "content": msg[4],
         "isDone": msg[5] == 1
     }
@@ -95,11 +90,11 @@ async def get_all_messages_in_session(session_id, authorization: str = Header(No
     messages.sort(key=lambda test_list: test_list[3])
     for m in messages:
         formated_messages.append({
-            "role": "assistant" if int(m[0]) == 1 else username,
+            "role": "assistant" if int(m[1]) == 1 else username,
             "content": m[4],
             "isDone": m[5]
         })
-    return {"messages": messages}
+    return {"messages": formated_messages}
 
 
 def submit(messages, session, user_message_id, assistant_message_id):
@@ -120,23 +115,24 @@ async def send_message(request: Request, authorization: str = Header(None)):
         raise HTTPException(status_code=400, detail="No session field in the request body")
 
     # Get the message from the JSON data
-    message = data["message"]
+    message = str(data["message"])
     session = data["session"]
     old_messages = await get_all_messages_in_session(session_id=session, authorization=authorization)
 
     old_messages["messages"].append({
         "role": "user",
-        "content": message
+        "content": str(message),
+        "isDone": 0
     })
     user = get_user(authorization)
     # add the last message with the status not done (privacy check) to the message table
     user_index = db.parallelize_and_index(
         "INSERT INTO message (user_id,session_id,order_id,content,status) VALUES ( %s,%s,%s,%s,%s)",
-        [user[0], session, len(old_messages), "Processing Privacy", 0])
+        [user[0], session, len(old_messages["messages"]), "Processing Privacy", 0])
     # add a preemptive message last message with the status "Processing" to the message table
     assistant_index = db.parallelize_and_index(
         "INSERT INTO message (user_id,session_id,order_id,content,status) VALUES ( %s,%s,%s,%s,%s)",
-        [1, session, len(old_messages) + 1, "Processing", 0])
+        [1, session, len(old_messages["messages"]) + 1, "Processing", 0])
     # get the message_id of the assistant added message
     # fire and forget
     threading.Thread(target=submit, args=(old_messages, session, user_index, assistant_index)).start()

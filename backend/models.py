@@ -58,7 +58,8 @@ class Model:
         This includes, but is not limited to, names, addresses, phone numbers, email addresses, social security numbers, financial information, and any other details that could compromise privacy or confidentiality.
         Whenever the LLM detects such information, it should replace the entire segment with '^^'.
         The output should be the original text with all the sensitive content effectively obscured, ensuring privacy and security are maintained.
-        Include examples of different types of sensitive information in the text and demonstrate how the LLM processes and redacts these segments, replacing them with '@@@@@'
+        Include examples of different types of sensitive information in the text and demonstrate how the LLM processes and redacts these segments, replacing them with '^^'
+        You must refrain from commenting the provided text. Do not try to answer nor comment your process!
         It is very important mark the start of the censored
         text with ¦ and end it with ¦
         The following text is:\n
@@ -73,7 +74,7 @@ class Model:
         counter = 1
         for model in ["gemma:7b", "llama2:7b", "mistral:7b", "vicuna:7b", "openchat:7b"]:
             self.db.parallelize_and_ignore("UPDATE message SET content = %s WHERE id = %s",
-                                           ["Ethics calculations for {} {}/{}".format(model, counter, size),
+                                           ["Privacy update for {} {}/{}".format(model, counter, size),
                                             message_id])
             response = requests.post("http://localhost:11434/api/chat", json={
                 "model": model,

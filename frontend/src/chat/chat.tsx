@@ -85,6 +85,7 @@ function Chat() {
             return;
         }
         let all_messages = messages;
+        let current_session = currentSession
         let user_message: Message = {
             role: "user",
             content: newMessage,
@@ -114,29 +115,41 @@ function Chat() {
             let assistant_index: number = response.data.assistant_index;
             while (!finish_user || !finish_assistant) {
                 await new Promise(resolve => setTimeout(resolve, 1000));
-                await axios.get(`${config.backend_url}/singleMessage/${!finish_user ? user_index : assistant_index}`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                }).then(response => {
-                    if (!finish_user) {
+                if (!finish_user) {
+                    await axios.get(`${config.backend_url}/singleMessage/${current_session?.id}/${user_index}`, {
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`
+                        }
+                    }).then(response => {
                         user_message.content = response.data.content;
-                        setRefresh(!refresh);
-                    } else {
-                        assitent_message.content = response.data.content;
-                    }
-                    if (response.data.isDone) {
-                        if (!finish_user) {
+
+                        if (response.data.isDone) {
                             user_message.isDone = true;
                             finish_user = true;
-                        } else {
+                        }
+                        setRefresh(!refresh);
+                    }).catch(error => {
+                        console.error(error);
+                    });
+                }
+                if (!finish_assistant) {
+                    await axios.get(`${config.backend_url}/singleMessage/${current_session?.id}/${assistant_index}`, {
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`
+                        }
+                    }).then(response => {
+                        assitent_message.content = response.data.content;
+
+                        if (response.data.isDone) {
                             assitent_message.isDone = true;
                             finish_assistant = true;
                         }
-                    }
-                }).catch(error => {
-                    console.error(error);
-                });
+                        setRefresh(!refresh);
+                    }).catch(error => {
+                        console.error(error);
+                    });
+                }
+
             }
         }).catch(error => {
         });

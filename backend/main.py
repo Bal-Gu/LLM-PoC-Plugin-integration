@@ -40,6 +40,7 @@ def get_user(authorization: str):
     user = db.parallelize_and_fetch(False, "SELECT * FROM user WHERE auth_token = %s", [token])
     return user
 
+
 def get_assistant():
     # Query the user from the database using the previous token
     user = db.parallelize_and_fetch(False, "SELECT * FROM user WHERE id = 1")
@@ -64,13 +65,17 @@ async def list_all_available_models():
         return {"models": combined}
 
 
-@app.get("/singleMessage/{message_id}")
-async def get_single_message(message_id: int, authorization: str = Header(None)):
+@app.get("/singleMessage/{session_id}/{message_id}")
+async def get_single_message(session_id: int, message_id: int, authorization: str = Header(None)):
     user = get_user(authorization)
+    session = db.parallelize_and_fetch(False, "SELECT * FROM session WHERE id = %s AND user_id = %s",
+                                       [session_id, user[0]])
+    if session is None:
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid session id")
     msg = db.parallelize_and_fetch(False, "SELECT * FROM message WHERE id= %s", [message_id])
     if msg is None:
-        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid id")
-    if not msg[1] == user[0]:
+        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid message id")
+    if not session[1] ==  user[0]:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="User isn't allowed to watch this message")
     return {
         "role": user[1],

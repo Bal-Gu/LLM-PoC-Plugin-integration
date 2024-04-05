@@ -93,7 +93,7 @@ class Model:
                         # dismisses hallucination cases
                         private_message = tmp_private_message
 
-        return self.redact_sensitive_info(private_message)
+        return self.redact_sensitive_info(private_message).split("¦")[1]
         # TODO request the message and remove all of the privacy concerns
 
 

@@ -6,6 +6,7 @@ import NewChatWindow from "../NewChatWindow/NewChatWindow"
 import config from '../config/config.json';
 import {IoSend} from "react-icons/io5";
 import {hourglass} from 'ldrs';
+import {flushSync} from "react-dom";
 
 
 interface Session {
@@ -22,6 +23,7 @@ interface Message {
 }
 
 function Chat() {
+
     const navigate = useNavigate();
     const authToken = localStorage.getItem('authToken');
     const [sessions, setSessions] = useState<Session[]>([]);
@@ -37,6 +39,7 @@ function Chat() {
     const closeModal = () => {
         setIsModalOpen(false); // Function to close the modal
     };
+
 
     useEffect(() => {
         if (!authToken) {
@@ -60,7 +63,7 @@ function Chat() {
                 })
                 .catch(error => console.error(error));
         }
-    }, [authToken, navigate, refresh]);
+    }, [authToken, navigate]);
 
     const handleNewChat = () => {
         setIsModalOpen(true); // Set isModalOpen to true when the button is clicked
@@ -115,6 +118,7 @@ function Chat() {
             let assistant_index: number = response.data.assistant_index;
             while (!finish_user || !finish_assistant) {
                 await new Promise(resolve => setTimeout(resolve, 1000));
+                console.log("Fetch message");
                 if (!finish_user) {
                     await axios.get(`${config.backend_url}/singleMessage/${current_session?.id}/${user_index}`, {
                         headers: {
@@ -122,14 +126,13 @@ function Chat() {
                         }
                     }).then(response => {
                         user_message.content = response.data.content;
-
                         if (response.data.isDone) {
                             user_message.isDone = true;
                             finish_user = true;
                         }
-                        setRefresh(!refresh);
+                        setMessages(prevMessages => [...all_messages]);
+
                     }).catch(error => {
-                        console.error(error);
                     });
                 }
                 if (!finish_assistant) {
@@ -139,19 +142,20 @@ function Chat() {
                         }
                     }).then(response => {
                         assitent_message.content = response.data.content;
-
+                        console.log(assitent_message);
                         if (response.data.isDone) {
                             assitent_message.isDone = true;
                             finish_assistant = true;
                         }
-                        setRefresh(!refresh);
+
+                        setMessages(prevMessages => [...all_messages]);
                     }).catch(error => {
-                        console.error(error);
                     });
                 }
 
             }
         }).catch(error => {
+            console.log(error);
         });
 
 

@@ -3,10 +3,12 @@ def jaccard_similarity(text1, text2):
     set1 = set(text1.split())
     set2 = set(text2.split())
     # Calculate the intersection and the smaller set
-    intersection = set1.intersection(set2)
+    union = set1.union(set2)
     smaller_set = set1 if len(set1) < len(set2) else set2
+    bigger_set = set1 if len(set1) >= len(set2) else set2
+    intersection = bigger_set.intersection(smaller_set)
     # Calculate the modified Jaccard similarity
-    similarity = len(intersection) / len(smaller_set)
+    similarity = len(intersection) / len(union)
     return similarity
 
 

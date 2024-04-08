@@ -78,9 +78,8 @@ function Chat() {
             name: title,
             model: model_name,
         }
-        setSessions(sessions.concat(new_session));
-        setCurrentSession(new_session)
-        // Add the new session to the session list and display the selected model next to the chat
+        setSessions([new_session].concat(sessions));
+        setCurrentSession(new_session);
     };
 
     const handleSendMessage = () => {
@@ -220,7 +219,7 @@ function Chat() {
                 <div className="ScrolableSessionPannel">
                     {sessions.map(session => (
                         <div className="SessionSelection">
-                            <button className="SessionSelectionButton"
+                            <button className= {currentSession === session ? "SessionSelectionButtonCurrent" : "SessionSelectionButton"}
                                     onClick={() => handleSessionSelection(session)}>{session.name}</button>
 
                         </div>

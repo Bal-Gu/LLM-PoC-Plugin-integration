@@ -54,7 +54,7 @@ async def list_all_session_of_user(authorization: str = Header(None)):
     result = db.parallelize_and_fetch(True, "SELECT * FROM session WHERE user_id = %s", [user_id])
     if result is None:
         return {"list": []}
-    return {"list": result}
+    return {"list": result[::-1]}
 
 
 @app.get("/models")

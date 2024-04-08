@@ -85,6 +85,15 @@
     color: purple;
 }
 
+.SessionSelectionButtonCurrent {
+    width: 100%;
+    height: 100%;
+    background-color: rgb(128,0,128);
+    border: transparent;
+    font-size: large;
+    color: white;
+}
+
 .ChatInput {
     display: flex;
     justify-content: space-between;

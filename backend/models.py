@@ -157,8 +157,8 @@ class Model:
 
     def clean_message(self,message):
         # Remove leading and trailing newlines
-        cleaned_message = re.sub('^\n+', '', message)
-        cleaned_message = re.sub('\n+$', '', cleaned_message)
+        cleaned_message = re.sub(r'^[\s\n]+', '', message)
+        cleaned_message = re.sub(r'[\s\n]+$', '', cleaned_message)
         return cleaned_message
     def plugin_filtering(self, message):
         pass
@@ -172,7 +172,6 @@ class Model:
                                        [new_message, user_message_id])
         passed_ethics = self.ethics(new_message,assistant_message_id)
         if not passed_ethics:
-            # TODO save this responsce and exit early
             self.db.parallelize_and_ignore("UPDATE message SET content = %s, status = 1 WHERE id = %s",
                                            ["I am  sorry I can not process this message (ethics).", assistant_message_id])
             return

@@ -91,7 +91,7 @@ function Chat() {
         let user_message: Message = {
             role: "user",
             content: newMessage,
-            isDone: true
+            isDone: false
         };
         let assitent_message: Message = {
             role: "assistant",
@@ -178,7 +178,7 @@ function Chat() {
                     return {
                         role: message["role"],
                         content: message["content"],
-                        isDone: message["done"]
+                        isDone: message["isDone"]
                     } as Message;
                 });
             setMessages(mappedMessages);

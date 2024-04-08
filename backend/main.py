@@ -43,7 +43,7 @@ def get_user(authorization: str):
 
 def get_assistant():
     # Query the user from the database using the previous token
-    user = db.parallelize_and_fetch(False, "SELECT * FROM user WHERE id = 1")
+    user = db.parallelize_and_fetch(False, "SELECT * FROM user WHERE id = 1", [])
     return user
 
 
@@ -75,7 +75,7 @@ async def get_single_message(session_id: int, message_id: int, authorization: st
     msg = db.parallelize_and_fetch(False, "SELECT * FROM message WHERE id= %s", [message_id])
     if msg is None:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="Invalid message id")
-    if not session[1] ==  user[0]:
+    if not session[1] == user[0]:
         raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="User isn't allowed to watch this message")
     return {
         "role": user[1],
@@ -101,7 +101,7 @@ async def get_all_messages_in_session(session_id, authorization: str = Header(No
     for m in messages:
         formated_messages.append({
             "role": "assistant" if int(m[1]) == 1 else username,
-            "content": m[4],
+            "content": "" if m[4] is None else m[4],
             "isDone": m[5]
         })
     return {"messages": formated_messages}

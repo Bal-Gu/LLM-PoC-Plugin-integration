@@ -151,10 +151,10 @@ class Model:
         return sum(eval_found) / len(eval_found) >= self.config["Ethics_treshold"]
 
 
-    def integrity(self, message):
+    def integrity(self,new_message, all_messages):
         if not self.config["enforce_integrity"]:
-            return message
-        return message
+            return new_message
+        return new_message
 
     def clean_message(self,message):
         # Remove leading and trailing newlines
@@ -181,14 +181,13 @@ class Model:
 
         for i in chain:
             if i == -1:
-                ff = self.send_message_to_original_model(ff, model)
+                ff = self.send_message_to_original_model(ff,messages, model)
             else:
                 ff = self.plugin_filtering(ff)
                 ff = self.plugin_controller.execute_plugin(ff)
-        self.integrity(messages)
+        ff = self.integrity(ff,messages)
         self.db.parallelize_and_ignore("UPDATE message SET content = %s, status = 1 WHERE id = %s",
                                        [ff, assistant_message_id])
-        pass
 
     def install(self, models):
         print("Installing {}".format(models))
@@ -196,9 +195,15 @@ class Model:
             data = {"name": model}
             requests.post('http://localhost:11434/api/pull', json=data)
 
-    def send_message_to_original_model(self, ff, model):
+    def send_message_to_original_model(self, ff, history,model):
+        cp_hist = history.copy()
+        cp_hist["messages"][-1]["content"] = ff
+        for elem in cp_hist["messages"]:
+            if elem["role"] != "assistant":
+                elem["role"] = "user"
         response = requests.post("http://localhost:11434/api/chat", json={
             "model": model,
-            "messages": ff,
+            "messages": history["messages"],
             "stream": False
         })
+        return response.json()["message"]["content"]

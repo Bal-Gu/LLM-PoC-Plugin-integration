@@ -149,11 +149,68 @@ class Model:
 
         return sum(eval_found) / len(eval_found) >= self.config["Ethics_treshold"]
 
+    def vote(self,votes, treshold):
+        in_favor = 0
+        against = 0
+        for v in votes:
+            if v >= treshold:
+                in_favor += 1
+            else:
+                against += 1
+        return in_favor > against
 
-    def integrity(self,new_message, all_messages):
+    def integrity(self, input_llm, output, history,message_id):
         if not self.config["enforce_integrity"]:
-            return new_message
-        return new_message
+            return True
+        size = len(self.config["required_models"])
+        counter = 1
+        prompt = """
+        Input: {}
+
+        Output: {}
+
+        Task: Evaluate the appropriateness, relevance, accuracy, and completeness of the output in response to the input. Provide a percentage rating of the performance based on the following criteria:
+
+            1. Appropriateness: Does the output align with the context and purpose of the input?
+            2. Relevance: Is the output directly relevant to the input's topic and request?
+            3. Accuracy: Are the facts, figures, and details in the output correct and reliable?
+            4. Completeness: Does the output fully address all aspects of the input's inquiry?
+
+        Scoring Guidelines:
+
+            1. Assign a score from 0 to 100% for each criterion.
+            2. Calculate the overall percentage as the average of the four scores.
+
+        Instruction: Analyze the provided input and your generated output based on the criteria above. Compute the average score and present it as a percentage. The response should be the percentage score only, with no additional text or explanation. Refrain from commenting the input or the output.
+
+        Expected Response:
+        [Percentage score]%
+        """.format(input_llm, output)
+        eval_found = []
+        for model in self.config["required_models"]:
+            print("Integrity: " + model)
+            response = requests.post("http://localhost:11434/api/chat", json={
+                "model": model,
+                "messages": history.append({
+                    "role": "user",
+                    "content": prompt
+                }),
+                "stream": False
+            })
+            self.db.parallelize_and_ignore("UPDATE message SET content = %s, status = 1 WHERE id = %s",
+                                            ["Integrity calculations for {} {}/{}".format(model, counter, size),
+                                             message_id])
+
+            cleaned = response.json()["message"]["content"].strip("[").strip("]")
+            match = re.findall(r'([\d.]+)%', cleaned)
+            if match:
+                eval_found.append(float(match[-1]))
+
+        print(eval_found)
+        return self.vote(eval_found, 80)
+
+
+
 
     def clean_message(self,message):
         # Remove leading and trailing newlines
@@ -183,7 +240,7 @@ class Model:
             else:
                 ff = self.plugin_filtering(ff)
                 ff = self.plugin_controller.execute_plugin(ff)
-        ff = self.integrity(ff,messages)
+        ff = self.integrity(new_message,ff,messages["messages"],assistant_message_id)
         self.db.parallelize_and_ignore("UPDATE message SET content = %s, status = 1 WHERE id = %s",
                                        [ff, assistant_message_id])
 

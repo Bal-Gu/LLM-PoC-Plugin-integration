@@ -1,22 +1,9 @@
 # Description
-The following project is a proof of concept which should facilitate 
-to run server side  code and submit plugins
-to work with llm's.
+The following project is a proof of concept to use multiple models to verify a message's integrity, privacy, and ethicality and prove a response if the criteria are met.
+
 # Requirement
 * Ollama
 * Mysql
 * Python 3.10
 * Nodejs
 * npm 9 or higher
-
-# TODO
-
-* Auto-load models that are required
-* Create an endpoint to chat with the model
-* Create an endpoint to change the model
-* Adding ethical filtering
-* Adding privacy filtering
-* Adding plugin endpoint
-* Proper authentification for the API
-* Create an interface to chat
-* Create an interface for the plugins

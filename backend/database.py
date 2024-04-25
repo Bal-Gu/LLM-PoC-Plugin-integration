@@ -35,9 +35,6 @@ class Database:
         self.mycursor.execute(
             "CREATE TABLE IF NOT EXISTS message (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, session_id INT, order_id INT, content VARCHAR(10000), FOREIGN KEY(user_id) REFERENCES user(id), FOREIGN KEY(session_id) REFERENCES session(id),status TINYINT(1))")
 
-        # Plugin table
-        self.mycursor.execute(
-            "CREATE TABLE IF NOT EXISTS plugin (user_id INT, internal_id INT AUTO_INCREMENT PRIMARY KEY, session_id INT, activated BOOLEAN, FOREIGN KEY(user_id) REFERENCES user(id), FOREIGN KEY(session_id) REFERENCES session(id))")
 
         self.create_user("assistant", str(random.random()), False, 1)
         self.create_user("admin", config["admin_password"], True, 2)

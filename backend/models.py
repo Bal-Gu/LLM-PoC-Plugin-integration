@@ -160,47 +160,48 @@ class Model:
         size = len(self.config["required_models"])
         counter = 1
         prompt = """
-        Input: {}
+Input: {}
 
-        Output: {}
+Output: {}
 
-        Task: Evaluate the appropriateness, relevance, accuracy, and completeness of the output in response to the input. Provide a percentage rating of the performance based on the following criteria:
+Task: Evaluate the appropriateness, relevance, accuracy, and completeness of the output in response to the input. Provide a percentage rating of the performance based on the following criteria:
 
-            1. Appropriateness: Does the output align with the context and purpose of the input?
-            2. Relevance: Is the output directly relevant to the input's topic and request?
-            3. Accuracy: Are the facts, figures, and details in the output correct and reliable?
-            4. Completeness: Does the output fully address all aspects of the input's inquiry?
+    1. Appropriateness: Does the output align with the context and purpose of the input?
+    2. Relevance: Is the output directly relevant to the input's topic and request?
+    3. Accuracy: Are the facts, figures, and details in the output correct and reliable?
+    4. Completeness: Does the output fully address all aspects of the input's inquiry?
 
-        Scoring Guidelines:
+Scoring Guidelines:
 
-            1. Assign a score from 0 to 100% for each criterion.
-            2. Calculate the overall percentage as the average of the four scores.
+    1. Assign a score from 0 to 100% for each criterion.
+    2. Calculate the overall percentage as the average of the four scores.
 
-        Instruction: Analyze the provided input and your generated output based on the criteria above. Compute the average score and present it as a percentage. The response should be the percentage score only, with no additional text or explanation. Refrain from commenting the input or the output.
+Instruction: Analyze the provided input and your generated output based on the criteria above. Compute the average score and present it as a percentage. The response should be the percentage score only, with no additional text or explanation. Refrain from commenting the input or the output.
 
-        Expected Response:
-        [Percentage score]%
+Expected Response:
+[Percentage score]%
         """.format(input_llm, output)
+        history[-1] = {
+            "role": "user",
+            "content": prompt
+        }
         eval_found = []
         for model in self.config["required_models"]:
             print("Integrity: " + model)
             response = requests.post("http://localhost:11434/api/chat", json={
                 "model": model,
-                "messages": history.append({
-                    "role": "user",
-                    "content": prompt
-                }),
+                "messages": history,
                 "stream": False
             })
             self.db.parallelize_and_ignore("UPDATE message SET content = %s WHERE id = %s",
                                            ["Integrity calculations for {} {}/{}".format(model, counter, size),
                                             message_id])
             counter += 1
+            r = response.json()["message"]["content"]
             cleaned = response.json()["message"]["content"].strip("[").strip("]")
             match = re.findall(r'([\d.]+)%', cleaned)
             if match:
                 eval_found.append(float(match[-1]))
-
         print(eval_found)
 
         return self.vote(eval_found, self.config["Integrity_treshold"])

@@ -48,6 +48,8 @@ def get_assistant():
 @app.get("/session")
 async def list_all_session_of_user(authorization: str = Header(None)):
     user = get_user(authorization)
+    if not user:
+        return {"list": []}
     user_id = user[0]
     result = db.parallelize_and_fetch(True, "SELECT * FROM session WHERE user_id = %s", [user_id])
     if result is None:
@@ -108,7 +110,6 @@ async def get_all_messages_in_session(session_id, authorization: str = Header(No
 def submit(messages, session, user_message_id, assistant_message_id):
     model_name = db.parallelize_and_fetch(False, "SELECT model_name FROM session WHERE id = %s",
                                           [session])
-    # TODO add chain logic
     model.process_message(messages, model_name[0], user_message_id, assistant_message_id)
     pass
 

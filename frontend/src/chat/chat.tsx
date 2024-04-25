@@ -213,9 +213,6 @@ function Chat() {
                 <div className="SectionInSelection">
                     <button className="NewChatButton" onClick={handleNewChat}>New Chat</button>
                 </div>
-                <div className="SectionInSelection">
-                    <button className="PluginButton">Plugin</button>
-                </div>
                 <div className="ScrolableSessionPannel">
                     {sessions.map(session => (
                         <div className="SessionSelection">

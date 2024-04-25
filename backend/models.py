@@ -72,7 +72,7 @@ class Model:
         """.format(message)
         size = len(self.config["required_models"])
         counter = 1
-        for model in ["gemma:7b", "llama2:7b", "mistral:7b", "vicuna:7b", "openchat:7b"]:
+        for model in self.config["required_models"]:
             self.db.parallelize_and_ignore("UPDATE message SET content = %s WHERE id = %s",
                                            ["Privacy update for {} {}/{}".format(model, counter, size),
                                             message_id])
@@ -96,7 +96,6 @@ class Model:
                         private_message = tmp_private_message
 
         return self.redact_sensitive_info(private_message).split("¦")[1]
-        # TODO request the message and remove all of the privacy concerns
 
 
     def ethics(self, message, message_id):
@@ -207,7 +206,7 @@ class Model:
                 eval_found.append(float(match[-1]))
 
         print(eval_found)
-        return self.vote(eval_found, 80)
+        return self.vote(eval_found, self.config["Integrity_treshold"])
 
 
 
@@ -234,12 +233,7 @@ class Model:
             return
         ff = new_message
 
-        for i in chain:
-            if i == -1:
-                ff = self.send_message_to_original_model(ff,messages, model)
-            else:
-                ff = self.plugin_filtering(ff)
-                ff = self.plugin_controller.execute_plugin(ff)
+        ff = self.send_message_to_original_model(ff,messages, model)
         ff = self.integrity(new_message,ff,messages["messages"],assistant_message_id)
         self.db.parallelize_and_ignore("UPDATE message SET content = %s, status = 1 WHERE id = %s",
                                        [ff, assistant_message_id])

@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi import HTTPException, Header
 from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.status import HTTP_401_UNAUTHORIZED
+from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
 
 from backend.database import Database
 from backend.models import Model
@@ -91,7 +91,7 @@ async def get_all_messages_in_session(session_id, authorization: str = Header(No
                                        [session_id, user[0]])
 
     if not session:
-        raise HTTPException(status_code=HTTP_401_UNAUTHORIZED, detail="User not associated with this session")
+        raise HTTPException(status_code=HTTP_403_FORBIDDEN, detail="User not associated with this session")
 
     # Query all messages from the message table where session_id matches the provided session id
     username = user[1]

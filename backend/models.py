@@ -6,12 +6,10 @@ import requests
 
 from backend.database import Database
 from backend.jaccard import is_text_similar
-from backend.plugin import PluginController
 
 
 class Model:
-    def __init__(self, plugincontroller: PluginController, database: Database):
-        self.plugin_controller = plugincontroller
+    def __init__(self, database: Database):
         self.db = database
         re = requests.get("http://localhost:11434/api/tags")
         if re.status_code != 200:
@@ -48,7 +46,7 @@ class Model:
 
         return text
 
-    def privacy(self, message,message_id):
+    def privacy(self, message, message_id):
         if not self.config["enforce_privacy"]:
             return message
 
@@ -91,12 +89,11 @@ class Model:
                 new_message = str(response.json()["message"]["content"]).split("¦")[1]
                 if not re.search("I cannot fulfill your request", new_message):
                     tmp_private_message = "¦\n" + new_message + "¦\n"
-                    if is_text_similar(tmp_private_message,private_message):
+                    if is_text_similar(tmp_private_message, private_message):
                         # dismisses hallucination cases
                         private_message = tmp_private_message
 
         return self.redact_sensitive_info(private_message).split("¦")[1]
-
 
     def ethics(self, message, message_id):
         if not self.config["enforce_ethics"]:
@@ -143,12 +140,11 @@ class Model:
                 eval_found.append(int(match.group(1)))
                 print(int(match.group(1)))
 
-
             counter += 1
 
         return sum(eval_found) / len(eval_found) >= self.config["Ethics_treshold"]
 
-    def vote(self,votes, treshold):
+    def vote(self, votes, treshold):
         in_favor = 0
         against = 0
         for v in votes:
@@ -158,7 +154,7 @@ class Model:
                 against += 1
         return in_favor > against
 
-    def integrity(self, input_llm, output, history,message_id):
+    def integrity(self, input_llm, output, history, message_id):
         if not self.config["enforce_integrity"]:
             return True
         size = len(self.config["required_models"])
@@ -197,9 +193,9 @@ class Model:
                 "stream": False
             })
             self.db.parallelize_and_ignore("UPDATE message SET content = %s WHERE id = %s",
-                                            ["Integrity calculations for {} {}/{}".format(model, counter, size),
-                                             message_id])
-
+                                           ["Integrity calculations for {} {}/{}".format(model, counter, size),
+                                            message_id])
+            counter += 1
             cleaned = response.json()["message"]["content"].strip("[").strip("]")
             match = re.findall(r'([\d.]+)%', cleaned)
             if match:
@@ -209,36 +205,36 @@ class Model:
 
         return self.vote(eval_found, self.config["Integrity_treshold"])
 
-
-
-
-    def clean_message(self,message):
+    def clean_message(self, message):
         # Remove leading and trailing newlines
         cleaned_message = re.sub(r'^[\s\n]+', '', message)
         cleaned_message = re.sub(r'[\s\n]+$', '', cleaned_message)
         return cleaned_message
+
     def plugin_filtering(self, message):
         pass
 
     def process_message(self, messages: Dict, model: str, user_message_id: int, assistant_message_id: int,
                         chain: List[int]):
         message_to_process = messages["messages"][-1]["content"]
-        new_message = self.privacy(message_to_process,user_message_id)
+        new_message = self.privacy(message_to_process, user_message_id)
         # update the message to the filtered one and close the loading
         self.db.parallelize_and_ignore("UPDATE message SET content = %s, status = 1 WHERE id = %s",
                                        [new_message, user_message_id])
-        passed_ethics = self.ethics(new_message,assistant_message_id)
+        passed_ethics = self.ethics(new_message, assistant_message_id)
         if not passed_ethics:
             self.db.parallelize_and_ignore("UPDATE message SET content = %s, status = 1 WHERE id = %s",
-                                           ["I am  sorry I can not process this message (ethics).", assistant_message_id])
+                                           ["I am  sorry I can not process this message (ethics).",
+                                            assistant_message_id])
             return
         ff = new_message
 
-        ff = self.send_message_to_original_model(ff,messages, model)
-        passed_integrity = self.integrity(new_message,ff,messages["messages"],assistant_message_id)
+        ff = self.send_message_to_original_model(ff, messages, model)
+        passed_integrity = self.integrity(new_message, ff, messages["messages"], assistant_message_id)
         if not passed_integrity:
             self.db.parallelize_and_ignore("UPDATE message SET content = %s, status = 1 WHERE id = %s",
-                                           ["I am  sorry I can not process this message (integrity).", assistant_message_id])
+                                           ["I am  sorry I can not process this message (integrity).",
+                                            assistant_message_id])
             return
         self.db.parallelize_and_ignore("UPDATE message SET content = %s, status = 1 WHERE id = %s",
                                        [ff, assistant_message_id])
@@ -249,7 +245,7 @@ class Model:
             data = {"name": model}
             requests.post('http://localhost:11434/api/pull', json=data)
 
-    def send_message_to_original_model(self, ff, history,model):
+    def send_message_to_original_model(self, ff, history, model):
         cp_hist = history.copy()
         cp_hist["messages"][-1]["content"] = ff
         for elem in cp_hist["messages"]:

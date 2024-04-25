@@ -196,7 +196,7 @@ class Model:
                 }),
                 "stream": False
             })
-            self.db.parallelize_and_ignore("UPDATE message SET content = %s, status = 1 WHERE id = %s",
+            self.db.parallelize_and_ignore("UPDATE message SET content = %s WHERE id = %s",
                                             ["Integrity calculations for {} {}/{}".format(model, counter, size),
                                              message_id])
 
@@ -206,6 +206,7 @@ class Model:
                 eval_found.append(float(match[-1]))
 
         print(eval_found)
+
         return self.vote(eval_found, self.config["Integrity_treshold"])
 
 
@@ -234,7 +235,11 @@ class Model:
         ff = new_message
 
         ff = self.send_message_to_original_model(ff,messages, model)
-        ff = self.integrity(new_message,ff,messages["messages"],assistant_message_id)
+        passed_integrity = self.integrity(new_message,ff,messages["messages"],assistant_message_id)
+        if not passed_integrity:
+            self.db.parallelize_and_ignore("UPDATE message SET content = %s, status = 1 WHERE id = %s",
+                                           ["I am  sorry I can not process this message (integrity).", assistant_message_id])
+            return
         self.db.parallelize_and_ignore("UPDATE message SET content = %s, status = 1 WHERE id = %s",
                                        [ff, assistant_message_id])
 

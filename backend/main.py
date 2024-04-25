@@ -10,12 +10,10 @@ from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
 
 from backend.database import Database
 from backend.models import Model
-from backend.plugin import PluginController
 
 db = Database(json.load(open("../config/config.json", "rb")))
 app = FastAPI()
-plugin_controller = PluginController()
-model = Model(plugin_controller, db)
+model = Model(db)
 origins = [
     "http://localhost:3000",
     "http://localhost:8000",
@@ -111,7 +109,7 @@ def submit(messages, session, user_message_id, assistant_message_id):
     model_name = db.parallelize_and_fetch(False, "SELECT model_name FROM session WHERE id = %s",
                                           [session])
     # TODO add chain logic
-    model.process_message(messages, model_name[0], user_message_id, assistant_message_id, [-1])
+    model.process_message(messages, model_name[0], user_message_id, assistant_message_id)
     pass
 
 

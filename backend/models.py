@@ -214,8 +214,7 @@ class Model:
     def plugin_filtering(self, message):
         pass
 
-    def process_message(self, messages: Dict, model: str, user_message_id: int, assistant_message_id: int,
-                        chain: List[int]):
+    def process_message(self, messages: Dict, model: str, user_message_id: int, assistant_message_id: int):
         message_to_process = messages["messages"][-1]["content"]
         new_message = self.privacy(message_to_process, user_message_id)
         # update the message to the filtered one and close the loading

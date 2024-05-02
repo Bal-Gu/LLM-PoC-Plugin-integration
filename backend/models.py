@@ -30,7 +30,7 @@ class Model:
     def redact_sensitive_info(self, text: str):
         # Define regular expressions for different types of sensitive information
         email_regex = r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b'
-        phone_regex = r'\b[0-9]{3}-\[0-9]{3}-\[0-9]{4}\b'
+        phone_regex = r'\b[0-9]{9,}\b'
         social_regex = r'-?\d{4}[/-]?\d{4}[/-]?\d{4}'
         financial_regex = r'(?:^|[\s\t])(\d{4}[/-]?\d{4}[/-]?\d{4})$'
         new_text = text

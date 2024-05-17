@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.metrics import confusion_matrix, accuracy_score, recall_score, f1_score, precision_score
 
 # Load the privacy_model.csv
-data = pd.read_csv('privacy_model2.csv')
+data = pd.read_csv('privacy_model.csv')
 
 # Add a new column "predict" that checks if the output column contains the char '^'.
 data['predict'] = data['output'].apply(lambda x : '^' in str(x))
